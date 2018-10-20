@@ -25,6 +25,11 @@ FTP_HOST = "10.246.251.93"
 
 class FTPClient:
 
+    def __init__(self):
+	self.DEBUG    = True
+	self.PORT     = 21
+	self.FTP_HOST = "10.246.251.93"
+
     def sendMessage(self, sock, str):
         # From Example
         # value = int(sys.argv[1])
@@ -44,12 +49,18 @@ class FTPClient:
         # # take the first int only
         # message = chunk[0]
 
-        receivedMessage = sock.recv(4)
-        messsageChunk = struct.unpack('i', receivedMessage)
-        message = messsageChunk[0]
+	receivedMessage = ''
+	while True:
+            receivedMessage += sock.recv(1024)
+            # messsageChunk = struct.unpack("i", receivedMessage)
+            
+	    # message = messsageChunk[0]
+	    if receivedMessage:
+		print receivedMessage
 
-        if DEBUG:
-            print("Debug-RECEIVEMESS:", message)
+        if self.DEBUG:
+	    print("debug-RECEIVEMESS:", receivedMessage)
+            print("debug-MESSAGECHUNK:", message)
 
     # def doProtocol(sock):
     #     value = int(sys.argv[1])
@@ -66,7 +77,7 @@ class FTPClient:
 
 
 
-    def commandLoop(sock):
+    def commandLoop(self,sock):
         """"This function is the user interface that parses a users desired command and value."""
         while True:
             user_input = input("ftpclient>")
@@ -93,14 +104,18 @@ def main():
 
     # create an INET, STREAMing socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
+    # FTP Client
+    ftp = FTPClient()
     # now connect to the web server on port 9223, which we've made our server listen to
     # change the hostname if not on the same server
     print("Connecting to FTP " + FTP_HOST + " at port " + str(PORT))
     sock.connect((FTP_HOST, PORT))
 
     # FTP is a 'server speaks first' system so recive a 220 banner
-    FTPClient.receiveMessage(sock)
-    FTPClient.commandLoop(sock)
+    ftp.receiveMessage(sock)
+    ftp.commandLoop(sock)
 
     sock.close()
 
