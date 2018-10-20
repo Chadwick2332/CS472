@@ -38,7 +38,7 @@ def doProtocol(sock) :
 
 	print("client received: " + str(message))
 
-def commandLoop():
+def commandLoop(sock):
 	""""This function is the user interface that parses a users desired command and value."""
 	while True:
 		user_input = input("ftpclient>")
@@ -47,7 +47,7 @@ def commandLoop():
 		# value = int(sys.argv[1])
 
 		# pack and send our argument
-		data = struct.pack("s", user_token)
+		data = struct.pack("s", user_input)
 		sock.send(data)
 
 		command = user_token[0]
