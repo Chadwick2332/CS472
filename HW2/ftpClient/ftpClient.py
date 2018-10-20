@@ -26,9 +26,9 @@ FTP_HOST = "10.246.251.93"
 class FTPClient:
 
     def __init__(self):
-	self.DEBUG    = True
-	self.PORT     = 21
-	self.FTP_HOST = "10.246.251.93"
+        self.DEBUG    = True
+        self.PORT     = 21
+        self.FTP_HOST = "10.246.251.93"
 
     def sendMessage(self, sock, str):
         # From Example
@@ -49,29 +49,17 @@ class FTPClient:
         # # take the first int only
         # message = chunk[0]
 
-	receivedMessage = ''
-	while True:
+        receivedMessage = ''
+        while True:
             receivedMessage += sock.recv(1024)
             
-	    if not receivedMessage:
-        	if self.DEBUG:
-	    	    print("debug-RECEIVEMESS:", receivedMessage)
-            	    print("debug-MESSAGECHUNK:", message)
-	    if '220' in receivedMessage:
+            if not receivedMessage:
+                break
 
-    # def doProtocol(sock):
-    #     value = int(sys.argv[1])
-    #
-    #     # pack and send our argument
-    #     data = struct.pack("i", value)
-    #     sock.send(data)
-    #
-    #     # get back a response and unpack it
-    #     receivedMessage = sock.recv(4)
-    #     chunk = struct.unpack("i", receivedMessage)
-    #     # take the first int only
-    #     message = chunk[0]
-
+            if '220' in receivedMessage:
+                if self.DEBUG:
+                    print("debug-RECEIVEMESS:", receivedMessage)
+                break
 
 
     def commandLoop(self,sock):
