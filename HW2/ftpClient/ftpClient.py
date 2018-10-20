@@ -41,7 +41,14 @@ def doProtocol(sock) :
 def commandLoop():
 	""""This function is the user interface that parses a users desired command and value."""
 	while True:
-		user_token = input("ftpclient>").split(" ")
+		user_input = input("ftpclient>")
+		user_token = user_input.split(" ")
+
+		# value = int(sys.argv[1])
+
+		# pack and send our argument
+		data = struct.pack("s", user_token)
+		sock.send(data)
 
 		command = user_token[0]
 		value = user_token[1]
@@ -61,10 +68,10 @@ def main() :
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# now connect to the web server on port 9223, which we've made our server listen to
 	# change the hostname if not on the same server
-	print("Starting FTP at:", FTP_HOST, "at", PORT)
+	print("Connecting to FTP " + FTP_HOST + " at port " + str(PORT))
 	sock.connect((FTP_HOST, PORT))
 	# doProtocol(sock)
-	commandLoop()
+	commandLoop(sock)
 	sock.close()
 
 if __name__ == "__main__" :
