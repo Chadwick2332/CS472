@@ -52,15 +52,12 @@ class FTPClient:
 	receivedMessage = ''
 	while True:
             receivedMessage += sock.recv(1024)
-            # messsageChunk = struct.unpack("i", receivedMessage)
             
-	    # message = messsageChunk[0]
-	    if receivedMessage:
-		print receivedMessage
-
-        if self.DEBUG:
-	    print("debug-RECEIVEMESS:", receivedMessage)
-            print("debug-MESSAGECHUNK:", message)
+	    if not receivedMessage:
+        	if self.DEBUG:
+	    	    print("debug-RECEIVEMESS:", receivedMessage)
+            	    print("debug-MESSAGECHUNK:", message)
+	    if '220' in receivedMessage:
 
     # def doProtocol(sock):
     #     value = int(sys.argv[1])
