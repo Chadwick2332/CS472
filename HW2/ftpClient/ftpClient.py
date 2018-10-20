@@ -38,7 +38,7 @@ class FTPClient:
         # data = struct.pack("i", value)
         # sock.send(data)
 
-        data = struct.pack('i', str)
+        data = struct.pack('s', str)
         sock.send(data)
 
     def receiveMessage(self, sock):
@@ -51,35 +51,41 @@ class FTPClient:
 
         receivedMessage = ''
         while True:
-            receivedMessage += sock.recv(1024)
-            
+            receivedMessage = sock.recv(1024)
+           
+	    print("X" + receivedMessage) 
             if not receivedMessage:
                 break
 
             if '220' in receivedMessage:
                 if self.DEBUG:
-                    print("debug-RECEIVEMESS:", receivedMessage)
-                break
+                    print("DEBUG - " + receivedMessage)
+                return receivedMessage
+		break
 
 
-    def commandLoop(self,sock):
+
+    def getCommand(self,sock):
         """"This function is the user interface that parses a users desired command and value."""
         while True:
-            user_input = input("ftpclient>")
+            user_input = raw_input("ftpclient>")
             user_token = user_input.split(" ")
 
             # value = int(sys.argv[1])
 
             # pack and send our argument
             data = struct.pack("s", user_input)
-            sock.send(data)
+	    self.sendMessage(sock, user_input)
+
+	    #Return message from server
+	    self.receiveMessage(sock, user_input)
 
             command = user_token[0]
             value = user_token[1]
 
-        if DEBUG:
-            print("Command:", command)
-            print("Value:", value)
+            if DEBUG:
+            	print("Command:", command)
+            	print("Value:", value)
 
 
 def main():
@@ -100,7 +106,16 @@ def main():
 
     # FTP is a 'server speaks first' system so recive a 220 banner
     ftp.receiveMessage(sock)
-    ftp.commandLoop(sock)
+
+
+    # USER COMMAND
+    ftp.sendMessage(sock, 'USER cs472\r\n')
+
+    ftp.receiveMessage(sock)
+
+    while True:
+    	command = ftp.getCommand(sock)
+	
 
     sock.close()
 
