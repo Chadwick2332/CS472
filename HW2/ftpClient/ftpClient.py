@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-# based on https://docs.python.org/3/howto/sockets.html
-
 # CS 472 - Homework #2
 # Chad Dotson-Jones
 # ftpClient.py
@@ -20,38 +18,45 @@ import socket
 import struct
 import sys
 
-# ---------------
-#	Default		|
-# ---------------
-
-DEBUG = True
-PORT = 21
-FTP_HOST = "10.246.251.93"
 
 class FTPClient:
 
-    def __init__(self):
-        self.DEBUG    = True
-        self.PORT     = 21
-        self.FTP_HOST = "10.246.251.93"
+    def __init__(self, debug=True, port=21, host="10.246.251.93", sock=None):
+        self.DEBUG    = debug
+        self.PORT     = port  
+        self.FTP_HOST = host
+	self.SOCK     = sock 
 
-    def sendMessage(self, sock, message):
-        # From Example
-        # value = int(sys.argv[1])
-        #
-        # # pack and send our argument
-        # data = struct.pack("i", value)
-        # sock.send(data)
+    def createConnection(self):
 
-        sock.send(message)
+    	print("Connecting to FTP Server at " + self.FTP_HOST + ":" + str(self.PORT))
+
+	try:
+	    # create an INET, STREAMing socket
+    	    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        
+	
+    	    sock.connect((self.FTP_HOST, self.PORT))
+        
+	    print("Connected to " + self.FTP_HOST + " at " + str(self.PORT))
+	    
+	    self.SOCK = sock
+	except KeyboardInterrupt:
+	    self.closeConnection()
+
+    def closeConnection(self):
+	print("Connection terminated. Closing FTPClient...")
+	self.SOCK.close()
+
+    def sendMessage(self, message):
+	"""Sends message to server connect to socket. """
+        self.SOCK.send(message)
 
     def receiveMessage(self, sock_file):
-        # From Example
-        # # get back a response and unpack it
-        # receivedMessage = sock.recv(4)
-        # chunk = struct.unpack("i", receivedMessage)
-        # # take the first int only
-        # message = chunk[0]
+	"""Takes log file generated but socket, and reads the first line. This will be empty
+	unless the server as sent a message.
+	"""
 
 	# I attempted to use recv but was unable to getting an response besides the the banner
 	# I instead choose to use the Socket makefile() 
@@ -67,7 +72,7 @@ class FTPClient:
  
 
     def getCode(self, reply):
-	"""Reads through the reply file generate by socket. and parses out the reply code function groups.
+	"""Parses out the reply code function groups.
 		Ex:
 			200 Command okay.
 			220 Service ready for new user.
@@ -100,30 +105,28 @@ class FTPClient:
 
 	
 	while True:
-
 	    	     
             user_input = raw_input("ftpclient>")
 
             user_token = user_input.split(" ")
-        # value = int(sys.argv[1])
+
 	    # Some commands don't require values
             command = user_token[0]
 	    value = ""
 
-	    
+	    # Splitting the string before sending it to the server was not nessicarry in the end
+	    # but I keep this functionality just incase.
 	    if(len(user_token) == 2) and (command.upper() in ("USER", "PASS", "PORT")):
 
         	value = user_token[1]
 		
 		return command, value
-
 	    elif(len(user_token) == 1) and (command.upper() in ("CWD","PWD", "LIST", "HELP", "QUIT")):
 	
 		return command, ""	
 	    else:
 		print("Invalid Command.")
-		
-	
+			
 
         if DEBUG:
            print("Command:", command)
@@ -135,20 +138,12 @@ class FTPClient:
 
 
 	"""
-
-	# create an INET, STREAMing socket
-    	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	self.createConnection()
 
 
-    	# Socket file for server responses
+    	#  Socket file for server responses
     	socket_file = sock.makefile('r')
 
-
-    	print("Connecting to FTP Server at " + self.FTP_HOST + ":" + str(self.PORT))
-	
-    	sock.connect((self.FTP_HOST, self.PORT))
-
-	print("Connected to " + self.FTP_HOST + " at " + str(self.PORT))
 
 	while True:
 	    reply = self.receiveMessage(socket_file)
@@ -159,7 +154,7 @@ class FTPClient:
 
 	    # If server connection is terminating (hard error)
 	    if reply_code in ('221', '421', '426', 'EOF'):
-		print("Connection terminated. Closing FTPClient...")
+		self.closeConnection()
 		break
 
 	    # User Input
@@ -172,12 +167,10 @@ class FTPClient:
 		if self.DEBUG:
 		   print("DEBUG - SEND :" + message)
 
-	    	self.sendMessage(sock, message + "\r\n")
+	    	self.sendMessage(message + "\r\n")
 	    else:
 		break
-	    # If invalid command (soft error)
 	
-	sock.close()
 
 def main():
 
