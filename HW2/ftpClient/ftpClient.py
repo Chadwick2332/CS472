@@ -8,12 +8,14 @@
 # ----------------------------------------------------
 # |                     FTPClient     		     |
 # ----------------------------------------------------
+# Client takes in an address and port and connects to 
+# any FTP server. 
+# 
+# Command-line input will let you send command to the
+# commands to the server.
 #
-# Contains the main run loop of the script
-#
-#
-
-
+import time
+import datetime
 import socket
 import struct
 import sys
@@ -21,11 +23,12 @@ import sys
 
 class FTPClient:
 
-    def __init__(self, debug=True, port=21, host="10.246.251.93", sock=None):
+    def __init__(self, debug=False, port=21, host="10.246.251.93", sock=None, log="" ):
         self.DEBUG    = debug
         self.PORT     = port  
         self.FTP_HOST = host
-	self.SOCK     = sock 
+	self.SOCK     = sock
+	self.LOG      = log
 
     def createConnection(self):
 
@@ -49,9 +52,26 @@ class FTPClient:
 	print("Connection terminated. Closing FTPClient...")
 	self.SOCK.close()
 
+    def log(self, logMessage):
+
+	ts = time.time()
+
+	timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
+
+	f = open(self.LOG, "a+")
+
+	f.write(timestamp + " " + logMessage)
+
+	if self.DEBUG:
+	   print("DEBUG-LOG:" + timestamp + " " + logMessage)
+
+
+
     def sendMessage(self, message):
 	"""Sends message to server connect to socket. """
         self.SOCK.send(message)
+
+	self.log("Sent: " + message)
 
     def receiveMessage(self, sock_file):
 	"""Takes log file generated but socket, and reads the first line. This will be empty
@@ -64,6 +84,7 @@ class FTPClient:
            
 	file_line = sock_file.readline()
 
+	self.log("Received: " + file_line)
 
         if self.DEBUG:
 	   print("DEBUG - REPLY: " + file_line)
@@ -85,7 +106,7 @@ class FTPClient:
 	reply_code = reply[:3]
 
 
-	if DEBUG:
+	if self.DEBUG:
 	    print("DEBUG - CODE: " + reply_code)
 
 	return reply_code
@@ -142,12 +163,11 @@ class FTPClient:
 
 
     	#  Socket file for server responses
-    	socket_file = sock.makefile('r')
+    	socket_file = self.SOCK.makefile('r')
 
 
 	while True:
 	    reply = self.receiveMessage(socket_file)
-
 	    print(reply)
 
 	    reply_code = self.getCode(reply)
@@ -176,27 +196,33 @@ def main():
 
 
     if len(sys.argv) == 1:
-	print("Using default address and log file.")
+	print("No arguements given. Usage: python FTPClient.py <hostname> <logfile>")
 	
     if len(sys.argv) == 2 and isinstance(sys.argv[1], str):
 	print("Using address " + sys.argv[1] + ". No log file given.")
+
+    	# FTP Client
+    	ftp = FTPClient(host=sys.argv[1])
+
+	ftp.mainLoop()
 	
     if len(sys.argv) == 3 and isinstance(sys.argv[2], str):
     	print("Using address " + sys.argv[1] + ". Logging interaction at " + sys.argv[2])
 	
+	# FTP Client
+    	ftp = FTPClient(host=sys.argv[1], log=sys.argv[2], debug=True)
+
+	ftp.mainLoop()
+
+
     if len(sys.argv) >= 4:
 	print("Too many arguments.")
 	exit(1)
 
-        # FTP Client
-    ftp = FTPClient()
     # now connect to the web server on port 9223, which we've made our server listen to
     # change the hostname if not on the same server
 
-    # FTP is a 'server speaks first' system so recive a 220 banner
-    ftp.mainLoop()
-
-
+    
 
 if __name__ == "__main__":
     main()
