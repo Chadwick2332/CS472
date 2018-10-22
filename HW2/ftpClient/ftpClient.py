@@ -195,27 +195,27 @@ class FTPClient:
 def main():
 
 
-    if len(sys.argv) == 1:
-	print("No arguements given. Usage: python FTPClient.py <hostname> <logfile>")
-	
-    if len(sys.argv) == 2 and isinstance(sys.argv[1], str):
-	print("Using address " + sys.argv[1] + ". No log file given.")
-
-    	# FTP Client
-    	ftp = FTPClient(host=sys.argv[1])
-
-	ftp.mainLoop()
+    if len(sys.argv) < 3 :
+	print("No/not enough arguements given. Usage: python FTPClient.py <hostname> <logfile> <port>")
 	
     if len(sys.argv) == 3 and isinstance(sys.argv[2], str):
-    	print("Using address " + sys.argv[1] + ". Logging interaction at " + sys.argv[2])
+    	print("Using address " + sys.argv[1] + "at default port 21. Logging at " + sys.argv[2])
 	
 	# FTP Client
-    	ftp = FTPClient(host=sys.argv[1], log=sys.argv[2], debug=True)
+    	ftp = FTPClient(host=sys.argv[1], log=sys.argv[2])
+
+	ftp.mainLoop()
+
+    if len(sys.argv) == 4 and isinstance(sys.argv[2], str):
+    	print("Using address " + sys.argv[1] + "at " + sys.argv[3] + ". Logging at " + sys.argv[2])
+	
+	# FTP Client
+    	ftp = FTPClient(host=sys.argv[1], log=sys.argv[2], port=int(sys.argv[3]))
 
 	ftp.mainLoop()
 
 
-    if len(sys.argv) >= 4:
+    if len(sys.argv) > 4:
 	print("Too many arguments.")
 	exit(1)
 

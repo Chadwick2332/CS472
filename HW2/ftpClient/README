@@ -1,0 +1,7 @@
+This is my implementation of ftpClient. I was able to connect to the server and issue several commands.
+
+To run: python ftpClient.py xx.xxx.xxx.xx <logfile> <OPTIONAL-PORT>
+
+
+I was unable to open up a second dataport connection to the server and so was unable to use the 
+following commands: CWD, SYST, LIST, PASV, EPSV, PORT, EPRT, RETR, STOR.
