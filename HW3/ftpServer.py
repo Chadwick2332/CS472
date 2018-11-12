@@ -8,20 +8,42 @@
 # ----------------------------------------------------
 # |                     FTPServer     		     |
 # ----------------------------------------------------
-# Client takes in an address and port and connects to 
-# any FTP server. 
-# 
-# Command-line input will let you send command to the
-# commands to the server.
+# This file includes the main FTPServer class aswell as
+# a Client class which is inniated when a client connects 
+# to the server.
 #
+# Use the following convention for starting the server:
+#       python ftpServer.py LOG PORT [debug]
+#
+#   LOG: log file for recording
+#   PORT: the port number that you would like to open
+#        (if is in use another will be selected at random)
+#   DEBUG: Prints the debug messeage for the developer
+#
+#   Example:
+#       python ftpServer.py log.txt 4813 true 
+#
+#
+# Authentication is done by parsing a text file with the convention
+# {username} {password}. This file is aptly titled superSecretPasswords.
+# You may add your own username and password to this file or use example user.
+#   Ex.
+#       USER: cjd329
+#       PASS: 12345
+#
+# Several commands have no been implement correctly. The command LIST and STOR
+# do not return there output on the client side.
+#
+# The commands ESPV and RETR hav not been implemented
+
 import random
 import time
 import datetime
 import socket
 import struct
 import sys
+import os
 
-MAX_USER_LEN = 50
 
 class Client:
 
@@ -30,9 +52,26 @@ class Client:
         self.ADDR   = address
         self.LOG    = logfile
         self.DEBUG  = debug
+	    
+        
+        self.MAX_USER_LEN = 50
+        
+        #States
+        self.isAuth     = False
+        self.isDataPort = False
+        self.isPassive  = False 
 
-        self.user = ""
-        self.isAuth = False
+        #varibles
+        self.user       = ""
+        self.cwd        = os.getcwd()
+        self.homewd     = os.getcwd()
+        self.datasock   = None
+        self.dataAddr   = None 
+        self.dataPort   = None
+
+        self.serversock = None
+        self.serverAddr = None
+        self.serverPort = None
 
         print("Create connection at " + self.ADDR[0])
 
@@ -56,40 +95,51 @@ class Client:
 
         mess_list = mess.split()
         command = mess_list[0].upper()
+        
+        #TODO Validate that param length is less than 
 
-        if len(mess_list) >= 2:
+        # DEBUG
+        if self.DEBUG:
+            print("DEBUG PARSE-COMMAND:", command)
+
+        try:
             if command == "USER":
                 return self.doUser(mess_list[1])
             elif command == "PASS":
-                return ""
+                return self.doPass(mess_list[1], database) 
             elif command == "CWD":
-                return""
+                return self.doCwd(mess_list)
             elif command == "CDUP":
-                return""
+                return self.doCdup()
             elif command == "PASV":
-                return""
+                return self.doPasv()
             elif command == "EPSV":
-                return""
+                return"202 EPSV not implemented"
             elif command == "PORT":
-                return""
+                return self.doPort(mess_list[1])
             elif command == "RETR":
-                return""
+                return"202 RETR not implemented "
             elif command == "STOR":
-                return""
-            elif command == "PWD":
-                return""
-            elif command == "SYST":
-                return""
+                return self.doStor(mess_list)
             elif command == "LIST":
-                return""
+                if len(mess_list) == 2:
+                    return self.doList(mess_list[1])
+                else:
+                    return self.doList("")
+            elif command == "SYST":
+                return self.doSyst()
             elif command == "HELP":
-                return""
+                return self.doHelp()
+            elif command == "PWD":
+                return self.doPwd(mess_list)
             elif command == "QUIT":
-                return""
+                return self.doQuit()
+            else:
+                return "500 Command unrecognized."
 
-
+        except IndexError:
+            return "501 No arguements given."
     def log(self, logMessage):
-        print("log")
         ts = time.time()
         timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
 
@@ -99,19 +149,155 @@ class Client:
         if self.DEBUG:
             print("DEBUG-LOG:" + timestamp + " " + logMessage)
 
+    def createDatasock(self, port, addr=None):
+        """ Creates a data socket to the client to be used once per command. The function
+        returns the reply and the socket if it was created successfully."""
+
+        
+        if addr is None:
+            addr = self.ADDR[0]
+        if not self.isPassive:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect((addr, port))
+          
+                # save socket 
+                self.datasock = sock
+                self.isDataPort = True
+
+                return "200 Data connection established."
+
+            except socket.error:
+                return "501 Unable to create dataport at given address" 
+
+        else:
+            self.datasock, _ = self.serversock.accept()
+
+            return "225 Data connection is open."
+            
+    def closeDatasock(self):
+        
+        self.datasock.close()
+        self.datasock = None
+        self.isDataPort = False 
+        
+        self.debug("datasock", "Closing..") 
+                 
+    def debug(self, prefix, data):
+        """Prints out a debug log if debug is enabled in the system."""
+        #TODO Fix  all the old debug statements
+        if self.DEBUG:
+            if data is not list:
+                print("DEBUG - " + prefix.upper() + ": " + str(data))
+            else:
+                for datum in data:
+                    print("DEBUG - " + prefix.upper() + ": " + str(datum))
+
     # COMMAND FUNCTIONS
 
+    def doPasv(self):
+        """ Changes the dataport connection mode to from active to passive."""
+        if not self.isAuth:
+            return "530 User is not logged in."
+
+
+        try:        
+            self.serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.serversock.bind((self.ADDR[0], 0))
+            self.serversock.listen(1)
+
+            self.isPassive = True
+
+            addr, port = self.serversock.getsockname()
+
+            hi = port >> 8
+            lo = port & 255
+
+            self.serverAddr = addr
+            self.serverPort = port
+
+            return "227 Enter Passive Mode (" + ",".join(addr.split(".")) + "," + str(hi) + "," + str(lo) + ")"
+        except socket.error:
+            return "500 Unable to enter passive mode"
+
+    def doPwd(self, params):
+        """ Prints the working directory of the given input. If no input is given than
+        assumes current working directory """
+
+        if len(params) == 1:
+            return "257 " + self.cwd
+        elif len(params) == 2:
+            new_dir = params[1]
+
+            if new_dir == ".":
+                cwd = self.cwd + '/'
+            else:
+                cwd = self.cwd + '/' + new_dir
+
+            return "257 " + cwd
+        else:
+            return "501 invalid p arameters" 
+
+
+    def doCdup(self):
+        """if current working directory is same as base dir then do nothing. But if not
+        then step up one directory"""
+
+        if not self.isAuth:
+            return "530 User is not logged in."
+        if not self.cwd == self.homewd or self.cwd in self.homewd:
+            cwd = self.cwd
+            cwd = cwd[:cwd.rfind("/")]
+           
+            # If CWD is subset of home
+            if cwd not in self.homewd:
+                self.cwd = cwd
+                return "200 Move UP in directory"
+            else:
+                return "551 directory is already at home. "
+        else:
+            return "551 Directory is already at home."
+
+
+
+    def doCwd(self, params):
+        """ Returns the current working directory"""
+        if not self.isAuth:
+            return "530 User is not logged in."
+        
+        if len(params) == 2:
+            new_dir = params[1]
+
+            if new_dir == "/":
+                self.cwd = self.homewd
+            else:
+                self.cwd = self.cwd + "/" + new_dir
+            
+            self.debug("CWD", self.cwd)
+
+            return "250 Updated current working directory"
+        else:
+            return "501 Argument needed for CWD"
+        
+
     def doUser(self, user):
-        if len(user) < MAX_USER_LENGTH:
+        """ Does validation on the user name and saves 
+            it to client variable user for later use. """
+
+        if len(user) < self.MAX_USER_LEN:
+            self.user = user
             return "331 Please enter your password"
         else:
-            self.user = user
             return "501 Username is too long"
 
     def doPass(self, passw, database):
+        """ Takes the giving password and compares it to creds in the database. If login is 
+        successful than set isAuth to true. """
         if self.user == "":
-            return ""
+            return "530 Must use USER first"
         else:
+            print("doPass")
+            
             creds = self.user + " " + passw
 
             if creds in database:
@@ -120,8 +306,142 @@ class Client:
             else:
                 return "530 Not Logged in"
 
+    def doSyst(self):
+        """ Returns information of the operating system. """
+        return "215 UNIX 8.0"
 
 
+    def doHelp(self):
+        return "214 List of Commands: USER, PASS, CWD, CDUP, QUIT, PASV, EPSV, PORT, EPRT, RETR, STOR, PWD, SYST, LIST, HELP"
+
+    def doStor(self, params):
+        if not self.isAuth:
+            return "530 User is not logged in."
+        
+        if len(params) == 2:
+            new_dir = params[1]
+
+            if new_dir == ".":
+                path = self.cwd
+            else:
+                path = self.cwd + "/" + new_dir
+
+            try:
+                store_file = open(path, "w")
+
+                while 1:
+                    data=self.datasock.recv(1024)
+                    if not data:
+                        self.debug("stor", "No more data")
+                        break
+                    else:
+                        store_file.write(data)
+
+                store_file.close()
+
+                self.closeDatasock()
+                
+                return "226 Completed data transfer successfully"
+            except IOError:
+                return "500 Unable to create path"
+            except socket.error:
+                return "500 Unable to read from socket"
+            except:
+                return "500 Unknown error"
+
+
+            
+            self.debug("CWD", self.cwd)
+
+
+
+    def doList(self, directory):
+        """ Triggers the ls unix command in the current working directory. The ls command
+        is implemented in the python package os. """
+
+        #TODO
+        # Check is var is directory
+
+        if not self.isAuth:
+            return "530 User is not logged in."
+            
+        if directory != "":
+            dirs = os.listdir(directory)
+        else:
+            self.debug("dirs - cwd", self.cwd)
+            dirs = os.listdir(self.cwd)
+         
+        self.debug("list directories", dirs)
+
+        #TODO get full dir
+
+        # Sending directory
+        # try:
+        for direct in dirs:
+            mess = self.cwd + "/" + direct + "\r\n"
+            self.datasock.send(mess)
+
+        self.log("Sent: LIST of directories in " + self.cwd + directory + "\n")
+
+        self.closeDatasock()
+        
+        return "226 Directories sent." 
+            # except socket.error:
+                # return "425 Couldn't open data connection"
+
+
+
+
+    def doPort(self, param):
+        """Takes the the input string (h1,h2,h3,h4,p1,p2). Validate that the input is formatted correctly.
+        Validate that the input has right number of inputs. Validate that the values are within the correct ranges """
+
+        if not self.isAuth:
+            return "530 User is not logged in."
+
+        #TODO Check if value are integers
+
+        params = param.split(",")
+        addr = ""
+    
+
+        if len(params) == 6:
+            for arg in params[:4]:
+                # Validate Address
+                self.debug("PORT - PARAM", arg)
+                if int(arg) < 0 or int(arg) > 255:
+                    return "501 Address is invalid"
+                else:
+                    addr += str(arg) + "."
+            
+            addr = addr[:-1] 
+
+            p1 = int(params[4])
+            p2 = int(params[5])
+
+            #TODO Check if this is a valid port
+            
+            dataport = (p1 * 256) + p2
+
+            self.debug("port - address", addr)
+            self.debug("port - dataport", dataport)
+           
+            
+            self.dataAddr = addr
+            self.dataPort = dataport
+
+
+            self.createDatasock(dataport, addr=addr)
+
+           
+            # return self.createDatasock(dataport, addr=addr) 
+            return "200 Port Command."
+        else:
+            return "501 Invalid arguement"
+
+        
+    def doQuit(self):
+        return "221 Goodbye!"
 class FTPServer:
 
     def __init__(self, debug=False, port=2121, sock=None, log="" ):
@@ -168,7 +488,7 @@ class FTPServer:
 
         f = open(self.LOG, "a+")
 
-        f.write(timestamp + " " + logMessage)
+        f.write(timestamp + " " + logMessage + "\n" )
 
         if self.DEBUG:
             print("DEBUG-LOG:" + timestamp + " " + logMessage)
@@ -213,15 +533,26 @@ class FTPServer:
 
         client.sendMess("220 Welcome to Chad's FTP Server!")
 
+
+        # Until resp is QUIT
         while True:
             mess = client.recvMess()
-            print("Received: " + mess)
 
-            resp = client.parseCommand(mess, self.DATABASE)
-            client.sendMess(resp)
+            # check null
+            if len(mess) > 0:
+                print("Received: " + mess)
+
+                resp = client.parseCommand(mess, self.DATABASE)
+                client.sendMess(resp)
+
+            #Quit
+            if resp[:3] == "221":
+                print("Closing connection.")
+                break
 
             if self.DEBUG:
                 print("DEBUG SERVER-REPLY:" + resp)
+                print("DEBUG SERVER-CODE:" + resp[:3])
 
     def mainLoop(self):
         """This is the main control loop of the protocol. Since FTP is a 'server speaks first' system
@@ -237,14 +568,15 @@ class FTPServer:
 
 
         while True:
+            try:
                 # accept connections from outside
                 (clientsocket, address) = self.SOCK.accept()
 
                 client = Client(clientsocket, address, self.LOG, self.DEBUG)
                 self.handleConnection(client)
                 clientsocket.close()
-
-
+            except KeyboardInterrupt:
+                exit(1)
 
 def main():
 
