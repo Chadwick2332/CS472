@@ -506,133 +506,133 @@ class FTPServer:
 				exit(1)
 
 
-def createConnection(self, host, port):
-	"""This function is used to create a socket connection to machine that just connected to the port.
-	It also binds the server to public host on start up."""
+	def createConnection(self, host, port):
+		"""This function is used to create a socket connection to machine that just connected to the port.
+		It also binds the server to public host on start up."""
 
-	try:
-		# create an INET, STREAMing socket
-		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		try:
+			# create an INET, STREAMing socket
+			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-		if (host == 'public'):
-			sock.bind((socket.gethostname(), port))
-			print("Starting FTP Server at port: " + str(self.PORT))
-		else:
-			sock.connect((host, port))
-			print("Connected to " + host + " at " + str(port))
+			if (host == 'public'):
+				sock.bind((socket.gethostname(), port))
+				print("Starting FTP Server at port: " + str(self.PORT))
+			else:
+				sock.connect((host, port))
+				print("Connected to " + host + " at " + str(port))
 
-		self.SOCK = sock
-	except KeyboardInterrupt:
-		self.closeConnection()
-	except socket.error:
-		print("Port " + str(self.PORT) + " already in use.")
-		self.createConnection(host, self.randomPort())
-
-
-def closeConnection(self):
-	print("Connection terminated. Closing FTPClient...")
-	self.SOCK.close()
+			self.SOCK = sock
+		except KeyboardInterrupt:
+			self.closeConnection()
+		except socket.error:
+			print("Port " + str(self.PORT) + " already in use.")
+			self.createConnection(host, self.randomPort())
 
 
-def log(self, logMessage):
-	ts = time.time()
-
-	timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
-
-	f = open(self.LOG, "a+")
-
-	f.write(timestamp + " " + logMessage + "\n")
-
-	if self.DEBUG:
-		print("DEBUG-LOG:" + timestamp + " " + logMessage)
+	def closeConnection(self):
+		print("Connection terminated. Closing FTPClient...")
+		self.SOCK.close()
 
 
-def randomPort(self):
-	new_port = random.randint(1024, 10000)
-	self.PORT = new_port
+	def log(self, logMessage):
+		ts = time.time()
 
-	if self.DEBUG:
-		print("DEBUG - RANDOMPORT: " + str(self.PORT))
-	return new_port
+		timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
 
+		f = open(self.LOG, "a+")
 
-def loadUsers(self):
-	with open('superSecretPasswords') as f:
-		self.DATABASE = f.read().splitlines()
-
-
-def sendMessage(self, message):
-	"""Sends message to server connect to socket. """
-	self.SOCK.send(message + "\r\n")
-
-	self.log("Sent: " + message)
-
-
-def receiveMessage(self, sock_file):
-	"""Takes log file generated but socket, and reads the first line. This will be empty
-	unless the server as sent a message.
-	"""
-
-	# I attempted to use recv but was unable to getting an response besides the the banner
-	# I instead choose to use the Socket makefile()
-	# receivedMessage = sock.recv(1024)
-
-	file_line = sock_file.readline()
-
-	self.log("Received: " + file_line)
-
-	if self.DEBUG:
-		print("DEBUG - REPLY: " + file_line)
-
-	return file_line
-
-
-def handleConnection(self, client):
-	client.sendMess("220 Welcome to Chad's FTP Server!")
-
-	# Until resp is QUIT
-	while True:
-		mess = client.recvMess()
-
-		# check null
-		if len(mess) > 0:
-			print("Received: " + mess)
-
-			resp = client.parseCommand(mess, self.DATABASE)
-			client.sendMess(resp)
-
-		# Quit
-		if resp[:3] == "221":
-			print("Closing connection.")
-			break
+		f.write(timestamp + " " + logMessage + "\n")
 
 		if self.DEBUG:
-			print("DEBUG SERVER-REPLY:" + resp)
-			print("DEBUG SERVER-CODE:" + resp[:3])
+			print("DEBUG-LOG:" + timestamp + " " + logMessage)
 
 
-def mainLoop(self):
-	"""This is the main control loop of the protocol. Since FTP is a 'server speaks first' system
-   our loop will start by waiting for a reply from the server. """
+	def randomPort(self):
+		new_port = random.randint(1024, 10000)
+		self.PORT = new_port
 
-	# Open port for listening on public host
-	self.createConnection('public', self.PORT)
+		if self.DEBUG:
+			print("DEBUG - RANDOMPORT: " + str(self.PORT))
+		return new_port
 
-	# Load in our database of users and passwords
-	self.loadUsers()
 
-	self.SOCK.listen(self.MAXCONNECT)
+	def loadUsers(self):
+		with open('superSecretPasswords') as f:
+			self.DATABASE = f.read().splitlines()
 
-	while True:
-		try:
-			# accept connections from outside
-			(clientsocket, address) = self.SOCK.accept()
 
-			client = Client(clientsocket, address, self.LOG, self.DEBUG)
-			self.handleConnection(client)
-			clientsocket.close()
-		except KeyboardInterrupt:
-			exit(1)
+	def sendMessage(self, message):
+		"""Sends message to server connect to socket. """
+		self.SOCK.send(message + "\r\n")
+
+		self.log("Sent: " + message)
+
+
+	def receiveMessage(self, sock_file):
+		"""Takes log file generated but socket, and reads the first line. This will be empty
+		unless the server as sent a message.
+		"""
+
+		# I attempted to use recv but was unable to getting an response besides the the banner
+		# I instead choose to use the Socket makefile()
+		# receivedMessage = sock.recv(1024)
+
+		file_line = sock_file.readline()
+
+		self.log("Received: " + file_line)
+
+		if self.DEBUG:
+			print("DEBUG - REPLY: " + file_line)
+
+		return file_line
+
+
+	def handleConnection(self, client):
+		client.sendMess("220 Welcome to Chad's FTP Server!")
+
+		# Until resp is QUIT
+		while True:
+			mess = client.recvMess()
+
+			# check null
+			if len(mess) > 0:
+				print("Received: " + mess)
+
+				resp = client.parseCommand(mess, self.DATABASE)
+				client.sendMess(resp)
+
+			# Quit
+			if resp[:3] == "221":
+				print("Closing connection.")
+				break
+
+			if self.DEBUG:
+				print("DEBUG SERVER-REPLY:" + resp)
+				print("DEBUG SERVER-CODE:" + resp[:3])
+
+
+	def mainLoop(self):
+		"""This is the main control loop of the protocol. Since FTP is a 'server speaks first' system
+		our loop will start by waiting for a reply from the server. """
+
+		# Open port for listening on public host
+		self.createConnection('public', self.PORT)
+
+		# Load in our database of users and passwords
+		self.loadUsers()
+
+		self.SOCK.listen(self.MAXCONNECT)
+
+		while True:
+			try:
+				# accept connections from outside
+				(clientsocket, address) = self.SOCK.accept()
+
+				client = Client(clientsocket, address, self.LOG, self.DEBUG)
+				self.handleConnection(client)
+				clientsocket.close()
+			except KeyboardInterrupt:
+				exit(1)
 
 
 def main():
