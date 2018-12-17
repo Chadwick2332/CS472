@@ -44,6 +44,7 @@ import struct
 import sys
 import os
 
+
 class Config:
 	def __init__(self, file_loc="", params={}):
 		self.file_loc = file_loc
@@ -68,10 +69,10 @@ class Config:
 		4. Add to dictionary
 		"""
 
-		#Remove return
+		# Remove return
 		line = line[:-1]
 		tokens = [value.strip() for value in line.split('=')]
-		#if tokenized_line as a length less than 2
+		# if tokenized_line as a length less than 2
 		if len(tokens) == 2:
 
 			if tokens[1].lower() is 'yes' or 'y':
@@ -99,25 +100,24 @@ class Client:
 
 	def __init__(self, socket, address, logfile, debug):
 		self.SOCKET = socket
-		self.ADDR   = address
-		self.LOG    = logfile
-		self.DEBUG  = debug
-
+		self.ADDR = address
+		self.LOG = logfile
+		self.DEBUG = debug
 
 		self.MAX_USER_LEN = 50
 
-		#States
-		self.isAuth     = False
+		# States
+		self.isAuth = False
 		self.isDataPort = False
-		self.isPassive  = False
+		self.isPassive = False
 
-		#varibles
-		self.user       = ""
-		self.cwd        = os.getcwd()
-		self.homewd     = os.getcwd()
-		self.datasock   = None
-		self.dataAddr   = None
-		self.dataPort   = None
+		# varibles
+		self.user = ""
+		self.cwd = os.getcwd()
+		self.homewd = os.getcwd()
+		self.datasock = None
+		self.dataAddr = None
+		self.dataPort = None
 
 		self.serversock = None
 		self.serverAddr = None
@@ -133,7 +133,6 @@ class Client:
 
 		self.log(mess)
 
-
 	def recvMess(self):
 		return self.SOCKET.recv(1024)
 
@@ -146,7 +145,7 @@ class Client:
 		mess_list = mess.split()
 		command = mess_list[0].upper()
 
-		#TODO Validate that param length is less than
+		# TODO Validate that param length is less than
 
 		# DEBUG
 		if self.DEBUG:
@@ -164,11 +163,11 @@ class Client:
 			elif command == "PASV":
 				return self.doPasv()
 			elif command == "EPSV":
-				return"202 EPSV not implemented"
+				return "202 EPSV not implemented"
 			elif command == "PORT":
 				return self.doPort(mess_list[1])
 			elif command == "RETR":
-				return"202 RETR not implemented "
+				return "202 RETR not implemented "
 			elif command == "STOR":
 				return self.doStor(mess_list)
 			elif command == "LIST":
@@ -189,6 +188,7 @@ class Client:
 
 		except IndexError:
 			return "501 No arguements given."
+
 	def log(self, logMessage):
 		ts = time.time()
 		timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
@@ -202,7 +202,6 @@ class Client:
 	def createDatasock(self, port, addr=None):
 		""" Creates a data socket to the client to be used once per command. The function
 		returns the reply and the socket if it was created successfully."""
-
 
 		if addr is None:
 			addr = self.ADDR[0]
@@ -235,7 +234,7 @@ class Client:
 
 	def debug(self, prefix, data):
 		"""Prints out a debug log if debug is enabled in the system."""
-		#TODO Fix  all the old debug statements
+		# TODO Fix  all the old debug statements
 		if self.DEBUG:
 			if data is not list:
 				print("DEBUG - " + prefix.upper() + ": " + str(data))
@@ -249,7 +248,6 @@ class Client:
 		""" Changes the dataport connection mode to from active to passive."""
 		if not self.isAuth:
 			return "530 User is not logged in."
-
 
 		try:
 			self.serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -288,7 +286,6 @@ class Client:
 		else:
 			return "501 invalid p arameters"
 
-
 	def doCdup(self):
 		"""if current working directory is same as base dir then do nothing. But if not
 		then step up one directory"""
@@ -308,8 +305,6 @@ class Client:
 		else:
 			return "551 Directory is already at home."
 
-
-
 	def doCwd(self, params):
 		""" Returns the current working directory"""
 		if not self.isAuth:
@@ -328,7 +323,6 @@ class Client:
 			return "250 Updated current working directory"
 		else:
 			return "501 Argument needed for CWD"
-
 
 	def doUser(self, user):
 		""" Does validation on the user name and saves
@@ -360,7 +354,6 @@ class Client:
 		""" Returns information of the operating system. """
 		return "215 UNIX 8.0"
 
-
 	def doHelp(self):
 		return "214 List of Commands: USER, PASS, CWD, CDUP, QUIT, PASV, EPSV, PORT, EPRT, RETR, STOR, PWD, SYST, LIST, HELP"
 
@@ -380,7 +373,7 @@ class Client:
 				store_file = open(path, "w")
 
 				while 1:
-					data=self.datasock.recv(1024)
+					data = self.datasock.recv(1024)
 					if not data:
 						self.debug("stor", "No more data")
 						break
@@ -399,17 +392,13 @@ class Client:
 			except:
 				return "500 Unknown error"
 
-
-
 			self.debug("CWD", self.cwd)
-
-
 
 	def doList(self, directory):
 		""" Triggers the ls unix command in the current working directory. The ls command
 		is implemented in the python package os. """
 
-		#TODO
+		# TODO
 		# Check is var is directory
 
 		if not self.isAuth:
@@ -423,7 +412,7 @@ class Client:
 
 		self.debug("list directories", dirs)
 
-		#TODO get full dir
+		# TODO get full dir
 
 		# Sending directory
 		# try:
@@ -436,11 +425,9 @@ class Client:
 		self.closeDatasock()
 
 		return "226 Directories sent."
-			# except socket.error:
-				# return "425 Couldn't open data connection"
 
-
-
+	# except socket.error:
+	# return "425 Couldn't open data connection"
 
 	def doPort(self, param):
 		"""Takes the the input string (h1,h2,h3,h4,p1,p2). Validate that the input is formatted correctly.
@@ -449,11 +436,10 @@ class Client:
 		if not self.isAuth:
 			return "530 User is not logged in."
 
-		#TODO Check if value are integers
+		# TODO Check if value are integers
 
 		params = param.split(",")
 		addr = ""
-
 
 		if len(params) == 6:
 			for arg in params[:4]:
@@ -469,36 +455,34 @@ class Client:
 			p1 = int(params[4])
 			p2 = int(params[5])
 
-			#TODO Check if this is a valid port
+			# TODO Check if this is a valid port
 
 			dataport = (p1 * 256) + p2
 
 			self.debug("port - address", addr)
 			self.debug("port - dataport", dataport)
 
-
 			self.dataAddr = addr
 			self.dataPort = dataport
 
-
 			self.createDatasock(dataport, addr=addr)
-
 
 			# return self.createDatasock(dataport, addr=addr)
 			return "200 Port Command."
 		else:
 			return "501 Invalid arguement"
 
-
 	def doQuit(self):
 		return "221 Goodbye!"
+
+
 class FTPServer:
 
 	def __init__(self, debug=False, port=2121, sock=None, log="", config={}):
-		self.DEBUG    = debug
-		self.PORT     = port
-		self.SOCK     = sock
-		self.LOG      = log
+		self.DEBUG = debug
+		self.PORT = port
+		self.SOCK = sock
+		self.LOG = log
 		self.DATABASE = []
 
 		self.CONFIG = config
@@ -507,152 +491,157 @@ class FTPServer:
 
 		self.MAXCONNECT = 10
 
-		if self.CONFIG: # Config exists
-			# Always assumes default when not specified
-            if 'port_mode' in self.CONFIG.keys():
-                self.PORT_MODE = self.CONFIG['port_mode']
-                print('PORT MODE: {}', self.PORT_MODE)
-            if 'port_mode' in self.CONFIG.keys():
-                self.PASV_MODE = self.CONFIG['pasv_mode']
-				print('PASV MODE: {}', self.PASV_MODE)
+		if self.CONFIG:  # Config exists
 
-			if self.PORT_MODE is False and self.PASV_MODE is False:
-				print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
-				exit(1)
+		# Always assumes default when not specified
 
+		if 'port_mode' in self.CONFIG.keys():
+			self.PORT_MODE = self.CONFIG['port_mode']
+			print('PORT MODE: {}', self.PORT_MODE)
+		if 'port_mode' in self.CONFIG.keys():
+			self.PASV_MODE = self.CONFIG['pasv_mode']
+			print('PASV MODE: {}', self.PASV_MODE)
 
-	def createConnection(self, host, port):
-		"""This function is used to create a socket connection to machine that just connected to the port.
-		It also binds the server to public host on start up."""
+		if self.PORT_MODE is False and self.PASV_MODE is False:
+			print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
+			exit(1)
 
 
+def createConnection(self, host, port):
+	"""This function is used to create a socket connection to machine that just connected to the port.
+	It also binds the server to public host on start up."""
+
+	try:
+		# create an INET, STREAMing socket
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+		if (host == 'public'):
+			sock.bind((socket.gethostname(), port))
+			print("Starting FTP Server at port: " + str(self.PORT))
+		else:
+			sock.connect((host, port))
+			print("Connected to " + host + " at " + str(port))
+
+		self.SOCK = sock
+	except KeyboardInterrupt:
+		self.closeConnection()
+	except socket.error:
+		print("Port " + str(self.PORT) + " already in use.")
+		self.createConnection(host, self.randomPort())
+
+
+def closeConnection(self):
+	print("Connection terminated. Closing FTPClient...")
+	self.SOCK.close()
+
+
+def log(self, logMessage):
+	ts = time.time()
+
+	timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
+
+	f = open(self.LOG, "a+")
+
+	f.write(timestamp + " " + logMessage + "\n")
+
+	if self.DEBUG:
+		print("DEBUG-LOG:" + timestamp + " " + logMessage)
+
+
+def randomPort(self):
+	new_port = random.randint(1024, 10000)
+	self.PORT = new_port
+
+	if self.DEBUG:
+		print("DEBUG - RANDOMPORT: " + str(self.PORT))
+	return new_port
+
+
+def loadUsers(self):
+	with open('superSecretPasswords') as f:
+		self.DATABASE = f.read().splitlines()
+
+
+def sendMessage(self, message):
+	"""Sends message to server connect to socket. """
+	self.SOCK.send(message + "\r\n")
+
+	self.log("Sent: " + message)
+
+
+def receiveMessage(self, sock_file):
+	"""Takes log file generated but socket, and reads the first line. This will be empty
+	unless the server as sent a message.
+	"""
+
+	# I attempted to use recv but was unable to getting an response besides the the banner
+	# I instead choose to use the Socket makefile()
+	# receivedMessage = sock.recv(1024)
+
+	file_line = sock_file.readline()
+
+	self.log("Received: " + file_line)
+
+	if self.DEBUG:
+		print("DEBUG - REPLY: " + file_line)
+
+	return file_line
+
+
+def handleConnection(self, client):
+	client.sendMess("220 Welcome to Chad's FTP Server!")
+
+	# Until resp is QUIT
+	while True:
+		mess = client.recvMess()
+
+		# check null
+		if len(mess) > 0:
+			print("Received: " + mess)
+
+			resp = client.parseCommand(mess, self.DATABASE)
+			client.sendMess(resp)
+
+		# Quit
+		if resp[:3] == "221":
+			print("Closing connection.")
+			break
+
+		if self.DEBUG:
+			print("DEBUG SERVER-REPLY:" + resp)
+			print("DEBUG SERVER-CODE:" + resp[:3])
+
+
+def mainLoop(self):
+	"""This is the main control loop of the protocol. Since FTP is a 'server speaks first' system
+   our loop will start by waiting for a reply from the server. """
+
+	# Open port for listening on public host
+	self.createConnection('public', self.PORT)
+
+	# Load in our database of users and passwords
+	self.loadUsers()
+
+	self.SOCK.listen(self.MAXCONNECT)
+
+	while True:
 		try:
-			# create an INET, STREAMing socket
-			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			# accept connections from outside
+			(clientsocket, address) = self.SOCK.accept()
 
-			if(host == 'public'):
-				sock.bind((socket.gethostname(), port))
-				print("Starting FTP Server at port: " + str(self.PORT))
-			else:
-				sock.connect((host, port))
-				print("Connected to " + host + " at " + str(port))
-
-			self.SOCK = sock
+			client = Client(clientsocket, address, self.LOG, self.DEBUG)
+			self.handleConnection(client)
+			clientsocket.close()
 		except KeyboardInterrupt:
-			self.closeConnection()
-		except socket.error:
-			print("Port "+ str(self.PORT) +" already in use.")
-			self.createConnection(host, self.randomPort())
+			exit(1)
 
-	def closeConnection(self):
-		print("Connection terminated. Closing FTPClient...")
-		self.SOCK.close()
-
-	def log(self, logMessage):
-
-		ts = time.time()
-
-		timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y/%m/%d %H:%M:%S.%f')
-
-		f = open(self.LOG, "a+")
-
-		f.write(timestamp + " " + logMessage + "\n" )
-
-		if self.DEBUG:
-			print("DEBUG-LOG:" + timestamp + " " + logMessage)
-
-	def randomPort(self):
-		new_port = random.randint(1024, 10000)
-		self.PORT = new_port
-
-		if self.DEBUG:
-			print("DEBUG - RANDOMPORT: " + str(self.PORT))
-		return new_port
-
-	def loadUsers(self):
-		with open('superSecretPasswords') as f:
-			self.DATABASE = f.read().splitlines()
-
-	def sendMessage(self, message):
-		"""Sends message to server connect to socket. """
-		self.SOCK.send(message + "\r\n")
-
-		self.log("Sent: " + message)
-
-	def receiveMessage(self, sock_file):
-		"""Takes log file generated but socket, and reads the first line. This will be empty
-		unless the server as sent a message.
-		"""
-
-		# I attempted to use recv but was unable to getting an response besides the the banner
-		# I instead choose to use the Socket makefile()
-		# receivedMessage = sock.recv(1024)
-
-		file_line = sock_file.readline()
-
-		self.log("Received: " + file_line)
-
-		if self.DEBUG:
-			print("DEBUG - REPLY: " + file_line)
-
-		return file_line
-
-	def handleConnection(self, client) :
-
-		client.sendMess("220 Welcome to Chad's FTP Server!")
-
-
-		# Until resp is QUIT
-		while True:
-			mess = client.recvMess()
-
-			# check null
-			if len(mess) > 0:
-				print("Received: " + mess)
-
-				resp = client.parseCommand(mess, self.DATABASE)
-				client.sendMess(resp)
-
-			#Quit
-			if resp[:3] == "221":
-				print("Closing connection.")
-				break
-
-			if self.DEBUG:
-				print("DEBUG SERVER-REPLY:" + resp)
-				print("DEBUG SERVER-CODE:" + resp[:3])
-
-	def mainLoop(self):
-		"""This is the main control loop of the protocol. Since FTP is a 'server speaks first' system
-	   our loop will start by waiting for a reply from the server. """
-
-		# Open port for listening on public host
-		self.createConnection('public', self.PORT)
-
-		# Load in our database of users and passwords
-		self.loadUsers()
-
-		self.SOCK.listen(self.MAXCONNECT)
-
-
-		while True:
-			try:
-				# accept connections from outside
-				(clientsocket, address) = self.SOCK.accept()
-
-				client = Client(clientsocket, address, self.LOG, self.DEBUG)
-				self.handleConnection(client)
-				clientsocket.close()
-			except KeyboardInterrupt:
-				exit(1)
 
 def main():
-
 	print("Hostname: " + socket.gethostname())
 
-
-	if len(sys.argv) < 2 :
-		print("No/not enough arguements given. Usage: python FTPServer.py <logfile> <port> [-d|--debug] [-c|--config <file> ]")
+	if len(sys.argv) < 2:
+		print(
+			"No/not enough arguements given. Usage: python FTPServer.py <logfile> <port> [-d|--debug] [-c|--config <file> ]")
 
 	if len(sys.argv) >= 3 and not sys.argv[1].isdigit() and sys.argv[2].isdigit():
 
@@ -661,8 +650,7 @@ def main():
 
 		print("Logging interactions in " + logfile)
 
-
-		#Checking for optional parameters
+		# Checking for optional parameters
 		# Two optional --debug or --config
 		# 1. Check for '--'
 		# 2. Check type
@@ -671,45 +659,45 @@ def main():
 		ind = 3
 		debug = False
 		config_dict = {}
-		while(len(sys.argv) - ind > 0):
-			if(sys.argv[ind][0] is '-'):
-				if(sys.argv[ind].lower() is '-d' or '--debug'):
+		while (len(sys.argv) - ind > 0):
+			if (sys.argv[ind][0] is '-'):
+				if (sys.argv[ind].lower() is '-d' or '--debug'):
 					debug = True
-				elif(sys.argv[ind].lower() is '-c' or '--config'):
+				elif (sys.argv[ind].lower() is '-c' or '--config'):
 					try:
 						config_file = sys.argv[ind + 1]
-                        # Make sure this isn't next argument
-                        if config_file[0] is '-':
-                            print("No configuration file given.")
-                        else:
-						    # Load configuration file
-						    conf = Config()
-						    config_dict = conf.load(config_file)
-					except IndexError:
-						print("No configuration file given.")
-				else:
-					print("{} is not a valid optional argument. ".format(sys.argv[ind]))
+			# Make sure this isn't next argument
+			if config_file[0] is '-':
+				print("No configuration file given.")
 			else:
-				print("Invalid optional argument given.")
+				# Load configuration file
+				conf = Config()
+				config_dict = conf.load(config_file)
+			except IndexError:
+			print("No configuration file given.")
+		else:
+			print("{} is not a valid optional argument. ".format(sys.argv[ind]))
+		else:
+		print("Invalid optional argument given.")
 
-            ind += 1
 
-		ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
+ind += 1
 
-		ftp.mainLoop()
+ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
 
-	elif sys.argv[1].isdigit():
-		print("Invalid log file provided. Must be name of log file.")
-	elif not sys.argv[2].isdigit():
-		print("Invalid port provided. Input is not an integer.")
+ftp.mainLoop()
 
-	if len(sys.argv) > 3:
-		print("Too many arguments.")
-	exit(1)
+elif sys.argv[1].isdigit():
+print("Invalid log file provided. Must be name of log file.")
+elif not sys.argv[2].isdigit():
+print("Invalid port provided. Input is not an integer.")
 
-	# now connect to the web server on port 9223, which we've made our server listen to
-	# change the hostname if not on the same server
+if len(sys.argv) > 3:
+	print("Too many arguments.")
+exit(1)
 
+# now connect to the web server on port 9223, which we've made our server listen to
+# change the hostname if not on the same server
 
 
 if __name__ == "__main__":
