@@ -509,11 +509,11 @@ class FTPServer:
 
 		if self.CONFIG: # Config exists
 			# Always assumes default when not specified
-			if 'port_mode' in self.CONFIG.keys():
-				self.PORT_MODE = self.CONFIG['port_mode']
-				print('PORT MODE: {}', self.PORT_MODE)
-			if 'port_mode' in self.CONFIG.keys():
-				self.PASV_MODE = self.CONFIG['pasv_mode']
+            if 'port_mode' in self.CONFIG.keys():
+                self.PORT_MODE = self.CONFIG['port_mode']
+                print('PORT MODE: {}', self.PORT_MODE)
+            if 'port_mode' in self.CONFIG.keys():
+                self.PASV_MODE = self.CONFIG['pasv_mode']
 				print('PASV MODE: {}', self.PASV_MODE)
 
 			if self.PORT_MODE is False and self.PASV_MODE is False:
@@ -678,15 +678,21 @@ def main():
 				elif(sys.argv[ind].lower() is '-c' or '--config'):
 					try:
 						config_file = sys.argv[ind + 1]
-						# Load configuration file
-						conf = Config()
-						config_dict = conf.load(config_file)
+                        # Make sure this isn't next argument
+                        if config_file[0] is '-':
+                            print("No configuration file given.")
+                        else:
+						    # Load configuration file
+						    conf = Config()
+						    config_dict = conf.load(config_file)
 					except IndexError:
 						print("No configuration file given.")
 				else:
 					print("{} is not a valid optional argument. ".format(sys.argv[ind]))
 			else:
 				print("Invalid optional argument given.")
+
+            ind += 1
 
 		ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
 
