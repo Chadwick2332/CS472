@@ -665,22 +665,20 @@ def main():
 				elif (sys.argv[ind].lower() is '-c' or '--config'):
 					try:
 						config_file = sys.argv[ind + 1]
-			# Make sure this isn't next argument
-			if config_file[0] is '-':
-				print("No configuration file given.")
+						# Make sure this isn't next argument
+						if config_file[0] is '-':
+							print("No configuration file given.")
+						else:
+							# Load configuration file
+							conf = Config()
+							config_dict = conf.load(config_file)
+					except IndexError:
+						print("No configuration file given.")
+				else:
+					print("{} is not a valid optional argument. ".format(sys.argv[ind]))
 			else:
-				# Load configuration file
-				conf = Config()
-				config_dict = conf.load(config_file)
-			except IndexError:
-			print("No configuration file given.")
-		else:
-			print("{} is not a valid optional argument. ".format(sys.argv[ind]))
-		else:
-		print("Invalid optional argument given.")
-
-
-ind += 1
+				print("Invalid optional argument given.")
+			ind += 1
 
 ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
 
