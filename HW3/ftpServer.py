@@ -673,7 +673,7 @@ def main():
 							conf = Config()
 							config_dict = conf.load(config_file)
 					except IndexError:
-						print("No configuration file given.")
+						print("End of file. No configuration file given.")
 				else:
 					print("{} is not a valid optional argument. ".format(sys.argv[ind]))
 			else:
