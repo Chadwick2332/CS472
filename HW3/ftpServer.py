@@ -44,8 +44,7 @@ import struct
 import sys
 import os
 
-
-class config:
+class Config:
 	def __init__(self, file_loc="", params={}):
 		self.file_loc = file_loc
 		self.params = params
@@ -512,12 +511,14 @@ class FTPServer:
 			# Always assumes default when not specified
 			if 'port_mode' in self.CONFIG.keys():
 				self.PORT_MODE = self.CONFIG['port_mode']
+				print('PORT MODE: {}', self.PORT_MODE)
 			if 'port_mode' in self.CONFIG.keys():
 				self.PASV_MODE = self.CONFIG['pasv_mode']
+				print('PASV MODE: {}', self.PASV_MODE)
 
-		if self.PORT_MODE is False and self.PASV_MODE is False:
-			print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
-			exit(1)
+			if self.PORT_MODE is False and self.PASV_MODE is False:
+				print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
+				exit(1)
 
 
 	def createConnection(self, host, port):
@@ -651,7 +652,7 @@ def main():
 
 
 	if len(sys.argv) < 2 :
-		print("No/not enough arguements given. Usage: python FTPServer.py <logfile> <port>")
+		print("No/not enough arguements given. Usage: python FTPServer.py <logfile> <port> [-d|--debug] [-c|--config <file> ]")
 
 	if len(sys.argv) >= 3 and not sys.argv[1].isdigit() and sys.argv[2].isdigit():
 
@@ -669,7 +670,7 @@ def main():
 		# Start of optional is always 3
 		ind = 3
 		debug = False
-		config_file = ""
+		config_dict = {}
 		while(len(sys.argv) - ind > 0):
 			if(sys.argv[ind][0] is '-'):
 				if(sys.argv[ind].lower() is '-d' or '--debug'):
@@ -677,6 +678,9 @@ def main():
 				elif(sys.argv[ind].lower() is '-c' or '--config'):
 					try:
 						config_file = sys.argv[ind + 1]
+						# Load configuration file
+						conf = Config()
+						config_dict = conf.load(config_file)
 					except IndexError:
 						print("No configuration file given.")
 				else:
@@ -684,9 +688,7 @@ def main():
 			else:
 				print("Invalid optional argument given.")
 
-
-
-		ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config)
+		ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
 
 		ftp.mainLoop()
 
