@@ -492,19 +492,18 @@ class FTPServer:
 		self.MAXCONNECT = 10
 
 		if self.CONFIG:  # Config exists
+			#  Always assumes default when not specified
 
-		# Always assumes default when not specified
+			if 'port_mode' in self.CONFIG.keys():
+				self.PORT_MODE = self.CONFIG['port_mode']
+				print('PORT MODE: {}', self.PORT_MODE)
+			if 'port_mode' in self.CONFIG.keys():
+				self.PASV_MODE = self.CONFIG['pasv_mode']
+				print('PASV MODE: {}', self.PASV_MODE)
 
-		if 'port_mode' in self.CONFIG.keys():
-			self.PORT_MODE = self.CONFIG['port_mode']
-			print('PORT MODE: {}', self.PORT_MODE)
-		if 'port_mode' in self.CONFIG.keys():
-			self.PASV_MODE = self.CONFIG['pasv_mode']
-			print('PASV MODE: {}', self.PASV_MODE)
-
-		if self.PORT_MODE is False and self.PASV_MODE is False:
-			print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
-			exit(1)
+			if self.PORT_MODE is False and self.PASV_MODE is False:
+				print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
+				exit(1)
 
 
 def createConnection(self, host, port):
