@@ -57,7 +57,8 @@ class Config:
 				while line:
 					if not self.isComment(line):
 						self.evaluate(line)
-						line = file.readline()
+					line = file.readline()
+				return self.params
 		except FileNotFoundError:
 			print("No such file : {} exists.".format(file_loc))
 
@@ -75,9 +76,9 @@ class Config:
 		# if tokenized_line as a length less than 2
 		if len(tokens) == 2:
 
-			if tokens[1].lower() is 'yes' or 'y':
+			if tokens[1].lower() == 'yes' or tokens[1].lower() == 'y':
 				self.params[tokens[0]] = True
-			elif tokens[1].lower() is 'no' or 'n':
+			elif tokens[1].lower() == 'no' or tokens[1].lower() == 'n':
 				self.params[tokens[0]] = False
 			else:
 				print("Value of {} must be either YES or NO (Y or N)".format(tokens[0]))
@@ -491,15 +492,16 @@ class FTPServer:
 
 		self.MAXCONNECT = 10
 
-		if self.CONFIG:  # Config exists
+		if len(self.CONFIG.keys()) > 0:  # Config exists
+ 			print("Config", self.CONFIG)
 			#  Always assumes default when not specified
 
 			if 'port_mode' in self.CONFIG.keys():
 				self.PORT_MODE = self.CONFIG['port_mode']
-				print('PORT MODE: {}', self.PORT_MODE)
+				print('PORT MODE: {}'.format(self.PORT_MODE))
 			if 'port_mode' in self.CONFIG.keys():
 				self.PASV_MODE = self.CONFIG['pasv_mode']
-				print('PASV MODE: {}', self.PASV_MODE)
+				print('PASV MODE: {}'.format(self.PASV_MODE))
 
 			if self.PORT_MODE is False and self.PASV_MODE is False:
 				print("Invalid Server Configuration: Mode can be PORT and/or PASV but can't be either.")
@@ -659,10 +661,12 @@ def main():
 		debug = False
 		config_dict = {}
 		while (len(sys.argv) - ind > 0):
-			if (sys.argv[ind][0] is '-'):
-				if (sys.argv[ind].lower() is '-d' or '--debug'):
-					debug = True
-				elif (sys.argv[ind].lower() is '-c' or '--config'):
+			arg = sys.argv[ind]
+			if (arg[0] == '-'):
+				print("ARG", arg)
+				if (arg.lower() == "-d" or arg.lower() == "--debug"):
+						debug = True
+				elif (arg.lower() == "-c" or arg.lower() == "--config"):
 					try:
 						config_file = sys.argv[ind + 1]
 						# Make sure this isn't next argument
@@ -672,12 +676,14 @@ def main():
 							# Load configuration file
 							conf = Config()
 							config_dict = conf.load(config_file)
+ 							print("Loaded Configuration file: {}".format(config_file))
+							ind += 1
 					except IndexError:
 						print("End of file. No configuration file given.")
 				else:
-					print("{} is not a valid optional argument. ".format(sys.argv[ind]))
+					print("{} is not a valid optional argument. ".format(arg))
 			else:
-				print("Invalid optional argument given.")
+				print("Invalid optional argument given: {}".format(sys.argv[ind]))
 			ind += 1
 
 		ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
