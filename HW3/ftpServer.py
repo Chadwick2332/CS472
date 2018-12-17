@@ -680,18 +680,18 @@ def main():
 				print("Invalid optional argument given.")
 			ind += 1
 
-ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
+		ftp = FTPServer(log=str(sys.argv[1]), port=int(sys.argv[2]), debug=debug, config=config_dict)
 
-ftp.mainLoop()
+		ftp.mainLoop()
 
-elif sys.argv[1].isdigit():
-print("Invalid log file provided. Must be name of log file.")
-elif not sys.argv[2].isdigit():
-print("Invalid port provided. Input is not an integer.")
+	elif sys.argv[1].isdigit():
+		print("Invalid log file provided. Must be name of log file.")
+	elif not sys.argv[2].isdigit():
+		print("Invalid port provided. Input is not an integer.")
 
-if len(sys.argv) > 3:
-	print("Too many arguments.")
-exit(1)
+	if len(sys.argv) > 3:
+		print("Too many arguments.")
+	exit(1)
 
 # now connect to the web server on port 9223, which we've made our server listen to
 # change the hostname if not on the same server
